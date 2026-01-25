@@ -1,0 +1,6 @@
+services:
+  vibe-kanban:
+    environment:
+      VK_ALLOWED_ORIGINS: ${VK_ALLOWED_ORIGINS:-http://localhost:3000}
+    ports:
+      - 3000:3000

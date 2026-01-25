@@ -1,0 +1,41 @@
+x-logging: &default-logging
+  driver: "json-file"
+  options:
+    max-size: "${LOG_MAX_SIZE:-10m}"
+    max-file: "${LOG_MAX_FILE:-3}"
+    compress: "${LOG_COMPRESS:-true}"
+services:
+  vibe-kanban:
+    image: ${IMAGE:-localhost/vibe-kanban}
+    container_name: vibe-kanban
+    restart: unless-stopped
+    volumes:
+      - vibe-kanban-data:/repos
+    logging: *default-logging
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 3s
+      start_period: 5s
+      retries: 3
+    environment:
+      HOST: ${HOST:-0.0.0.0}
+      PORT: ${PORT:-3000}
+      # VK_ALLOWED_ORIGINS: https://vk.example.com
+
+      VK_ALLOWED_ORIGINS: ${VK_ALLOWED_ORIGINS:-https://${VIRTUAL_HOST}}
+      VIRTUAL_PORT: ${VIRTUAL_PORT}
+      VIRTUAL_HOST: ${VIRTUAL_HOST}
+      LETSENCRYPT_HOST: ${LETSENCRYPT_HOST}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
+    networks:
+      - vibe-kanban-network
+      - letsencrypt-network
+volumes:
+  vibe-kanban-data:
+    name: vibe-kanban-data
+networks:
+  vibe-kanban-network:
+    name: vibe-kanban-network
+  letsencrypt-network:
+    external: true
