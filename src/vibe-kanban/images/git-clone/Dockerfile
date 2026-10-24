@@ -1,9 +1,8 @@
-# Build stage
-FROM node:24-alpine AS builder
+# Stage 1: Rust Base with Type Generation
+FROM rust:alpine AS rust-base
 
-# Install build dependencies including git
+# Install all Rust build dependencies once
 RUN apk add --no-cache \
-    curl \
     build-base \
     perl \
     llvm-dev \
@@ -13,19 +12,10 @@ RUN apk add --no-cache \
 # Allow linking libclang on musl
 ENV RUSTFLAGS="-C target-feature=-crt-static"
 
-# Install Rust
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
-ENV PATH="/root/.cargo/bin:${PATH}"
-
 # Git repository arguments
 ARG GIT_REPO=https://github.com/BloopAI/vibe-kanban.git
 ARG GIT_BRANCH=main
 ARG GIT_TAG=""
-ARG POSTHOG_API_KEY
-ARG POSTHOG_API_ENDPOINT
-
-ENV VITE_PUBLIC_POSTHOG_KEY=$POSTHOG_API_KEY
-ENV VITE_PUBLIC_POSTHOG_HOST=$POSTHOG_API_ENDPOINT
 
 # Set working directory
 WORKDIR /app
@@ -39,15 +29,41 @@ RUN if [ -n "$GIT_TAG" ]; then \
     git clone --depth 1 --branch ${GIT_BRANCH} ${GIT_REPO} . ; \
     fi
 
+# Generate TypeScript types from Rust
+RUN cargo run --bin generate_types
+
+# Stage 2: Frontend Builder
+FROM node:24-alpine AS frontend-builder
+
+# PostHog configuration
+ARG POSTHOG_API_KEY
+ARG POSTHOG_API_ENDPOINT
+
+ENV VITE_PUBLIC_POSTHOG_KEY=$POSTHOG_API_KEY
+ENV VITE_PUBLIC_POSTHOG_HOST=$POSTHOG_API_ENDPOINT
+
+# Set working directory
+WORKDIR /app
+
+# Copy repository with generated types from rust-base
+COPY --from=rust-base /app /app
+
 # Install pnpm and dependencies
 RUN npm install -g pnpm && pnpm install
 
-# Build application
-RUN npm run generate-types
+# Build frontend
 RUN cd frontend && pnpm run build
+
+# Stage 3: Backend Builder (reuse rust-base layer)
+FROM rust-base AS backend-builder
+
+# Copy built frontend artifacts from frontend-builder
+COPY --from=frontend-builder /app/frontend/dist /app/frontend/dist
+
+# Build Rust server binary
 RUN cargo build --release --bin server
 
-# Runtime stage
+# Stage 4: Runtime
 FROM alpine:latest AS runtime
 
 # Install runtime dependencies
@@ -61,8 +77,8 @@ RUN apk add --no-cache \
 RUN addgroup -g 1001 -S appgroup && \
     adduser -u 1001 -S appuser -G appgroup
 
-# Copy binary from builder
-COPY --from=builder /app/target/release/server /usr/local/bin/server
+# Copy binary from backend builder
+COPY --from=backend-builder /app/target/release/server /usr/local/bin/server
 
 # Create repos directory and set permissions
 RUN mkdir -p /repos && \
