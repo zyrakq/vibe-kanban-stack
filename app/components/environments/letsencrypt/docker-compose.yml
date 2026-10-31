@@ -1,0 +1,16 @@
+services:
+  remote-server:
+    environment:
+      VIRTUAL_PORT: ${VIRTUAL_PORT:-8081}
+      VIRTUAL_HOST: ${VIRTUAL_HOST}
+      VIRTUAL_PROTO: ${VIRTUAL_PROTO:-http}
+      LETSENCRYPT_HOST: ${LETSENCRYPT_HOST}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
+      SERVER_PUBLIC_BASE_URL: ${SERVER_PUBLIC_BASE_URL:-https://${VIRTUAL_HOST}}
+    networks:
+      - letsencrypt-network
+
+networks:
+  letsencrypt-network:
+    name: letsencrypt-network
+    external: true
