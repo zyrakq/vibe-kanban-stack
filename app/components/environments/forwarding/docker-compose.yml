@@ -1,0 +1,4 @@
+services:
+  remote-server:
+    ports:
+      - "8081:8081"
