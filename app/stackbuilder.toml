@@ -4,6 +4,8 @@ extensions_dirs = []
 
 [build]
 copy_additional_files = true
+# No system yq on this host — use stackbuilder's built-in Rust YAML merger.
+yaml_merger = "rust"
 
 [build.environments]
 available = ["forwarding", "letsencrypt", "step-ca"]
