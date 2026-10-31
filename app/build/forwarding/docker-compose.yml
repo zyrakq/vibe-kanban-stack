@@ -1,0 +1,130 @@
+---
+x-logging:
+  driver: json-file
+  options:
+    max-size: "${LOG_MAX_SIZE:-10m}"
+    max-file: "${LOG_MAX_FILE:-3}"
+    compress: "${LOG_COMPRESS:-true}"
+services:
+  remote-server:
+    container_name: vk-remote-server
+    image: "${IMAGE:-localhost/vk-remote-server:0.1.45}"
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "${LOG_MAX_SIZE:-10m}"
+        max-file: "${LOG_MAX_FILE:-3}"
+        compress: "${LOG_COMPRESS:-true}"
+    depends_on:
+      remote-db:
+        condition: service_healthy
+    environment:
+      RUST_LOG: "info,remote=info"
+      SERVER_DATABASE_URL: "postgres://remote:${DB_PASSWORD:?set DB_PASSWORD in .env}@remote-db:5432/remote"
+      SERVER_LISTEN_ADDR: "0.0.0.0:8081"
+      ELECTRIC_URL: "http://electric:3000"
+      ELECTRIC_ROLE_PASSWORD: "${ELECTRIC_ROLE_PASSWORD:?set ELECTRIC_ROLE_PASSWORD in .env}"
+      SERVER_PUBLIC_BASE_URL: "${SERVER_PUBLIC_BASE_URL:-http://localhost:8081}"
+      VIBEKANBAN_REMOTE_JWT_SECRET: "${VIBEKANBAN_REMOTE_JWT_SECRET:?set VIBEKANBAN_REMOTE_JWT_SECRET in .env}"
+      GITHUB_OAUTH_CLIENT_ID: "${GITHUB_OAUTH_CLIENT_ID:-}"
+      GITHUB_OAUTH_CLIENT_SECRET: "${GITHUB_OAUTH_CLIENT_SECRET:-}"
+      GOOGLE_OAUTH_CLIENT_ID: "${GOOGLE_OAUTH_CLIENT_ID:-}"
+      GOOGLE_OAUTH_CLIENT_SECRET: "${GOOGLE_OAUTH_CLIENT_SECRET:-}"
+      SELF_HOST_LOCAL_AUTH_EMAIL: "${SELF_HOST_LOCAL_AUTH_EMAIL:-}"
+      SELF_HOST_LOCAL_AUTH_PASSWORD: "${SELF_HOST_LOCAL_AUTH_PASSWORD:-}"
+      LOOPS_EMAIL_API_KEY: "${LOOPS_EMAIL_API_KEY:-}"
+      LOOPS_INVITE_TEMPLATE_ID: "${LOOPS_INVITE_TEMPLATE_ID:-cmhvy2wgs3s13z70i1pxakij9}"
+      LOOPS_REVIEW_READY_TEMPLATE_ID: "${LOOPS_REVIEW_READY_TEMPLATE_ID:-cmj47k5ge16990iylued9by17}"
+      LOOPS_REVIEW_FAILED_TEMPLATE_ID: "${LOOPS_REVIEW_FAILED_TEMPLATE_ID:-cmj49ougk1c8s0iznavijdqpo}"
+      AZURE_STORAGE_ACCOUNT_NAME: "${AZURE_STORAGE_ACCOUNT_NAME:-}"
+      AZURE_STORAGE_ACCOUNT_KEY: "${AZURE_STORAGE_ACCOUNT_KEY:-}"
+      AZURE_STORAGE_CONTAINER_NAME: "${AZURE_STORAGE_CONTAINER_NAME:-}"
+      AZURE_STORAGE_ENDPOINT_URL: "${AZURE_STORAGE_ENDPOINT_URL:-}"
+      AZURE_STORAGE_PUBLIC_ENDPOINT_URL: "${AZURE_STORAGE_PUBLIC_ENDPOINT_URL:-}"
+      TZ: "${TZ:-UTC}"
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - "--spider"
+        - "-q"
+        - "http://127.0.0.1:8081/v1/health"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - vk-network
+    ports:
+      - "8081:8081"
+  remote-db:
+    container_name: vk-remote-db
+    image: "postgres:16-alpine"
+    command:
+      - postgres
+      - "-c"
+      - wal_level=logical
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "${LOG_MAX_SIZE:-10m}"
+        max-file: "${LOG_MAX_FILE:-3}"
+        compress: "${LOG_COMPRESS:-true}"
+    environment:
+      POSTGRES_DB: remote
+      POSTGRES_USER: remote
+      POSTGRES_PASSWORD: "${DB_PASSWORD:?set DB_PASSWORD in .env}"
+      TZ: "${TZ:-UTC}"
+    volumes:
+      - "vk-db-data:/var/lib/postgresql/data"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pg_isready -U remote -d remote
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - vk-network
+  electric:
+    container_name: vk-electric
+    image: "electricsql/electric:1.4.13"
+    working_dir: /app
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "${LOG_MAX_SIZE:-10m}"
+        max-file: "${LOG_MAX_FILE:-3}"
+        compress: "${LOG_COMPRESS:-true}"
+    environment:
+      DATABASE_URL: "postgresql://electric_sync:${ELECTRIC_ROLE_PASSWORD:?set ELECTRIC_ROLE_PASSWORD in .env}@remote-db:5432/remote?sslmode=disable"
+      PG_PROXY_PORT: 65432
+      LOGICAL_PUBLISHER_HOST: electric
+      AUTH_MODE: insecure
+      ELECTRIC_INSECURE: true
+      ELECTRIC_MANUAL_TABLE_PUBLISHING: true
+      ELECTRIC_USAGE_REPORTING: false
+      ELECTRIC_FEATURE_FLAGS: "allow_subqueries,tagged_subqueries"
+      TZ: "${TZ:-UTC}"
+    volumes:
+      - "vk-electric-data:/app/persistent"
+    depends_on:
+      remote-db:
+        condition: service_healthy
+      remote-server:
+        condition: service_healthy
+    networks:
+      - vk-network
+networks:
+  vk-network:
+    name: vk-network
+    driver: bridge
+volumes:
+  vk-db-data:
+    name: vk-db-data
+  vk-electric-data:
+    name: vk-electric-data
