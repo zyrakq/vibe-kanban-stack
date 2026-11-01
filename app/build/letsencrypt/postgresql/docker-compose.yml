@@ -1,0 +1,104 @@
+---
+x-logging:
+  driver: json-file
+  options:
+    max-size: "${LOG_MAX_SIZE:-10m}"
+    max-file: "${LOG_MAX_FILE:-3}"
+    compress: "${LOG_COMPRESS:-true}"
+services:
+  vibe-kanban-app:
+    container_name: vibe-kanban-app
+    image: "${IMAGE:-localhost/vibe-kanban-remote-server:0.1.45}"
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "${LOG_MAX_SIZE:-10m}"
+        max-file: "${LOG_MAX_FILE:-3}"
+        compress: "${LOG_COMPRESS:-true}"
+    environment:
+      RUST_LOG: "${RUST_LOG:-info,remote=info}"
+      SERVER_LISTEN_ADDR: "${SERVER_LISTEN_ADDR:-0.0.0.0:8081}"
+      ELECTRIC_URL: "${ELECTRIC_URL:-http://vibe-kanban-electric:3000}"
+      ELECTRIC_ROLE_PASSWORD: "${ELECTRIC_ROLE_PASSWORD:?set ELECTRIC_ROLE_PASSWORD in .env}"
+      VIBEKANBAN_REMOTE_JWT_SECRET: "${VIBEKANBAN_REMOTE_JWT_SECRET:?set VIBEKANBAN_REMOTE_JWT_SECRET in .env}"
+      GITHUB_OAUTH_CLIENT_ID: "${GITHUB_OAUTH_CLIENT_ID:-}"
+      GITHUB_OAUTH_CLIENT_SECRET: "${GITHUB_OAUTH_CLIENT_SECRET:-}"
+      GOOGLE_OAUTH_CLIENT_ID: "${GOOGLE_OAUTH_CLIENT_ID:-}"
+      GOOGLE_OAUTH_CLIENT_SECRET: "${GOOGLE_OAUTH_CLIENT_SECRET:-}"
+      SELF_HOST_LOCAL_AUTH_EMAIL: "${SELF_HOST_LOCAL_AUTH_EMAIL:-}"
+      SELF_HOST_LOCAL_AUTH_PASSWORD: "${SELF_HOST_LOCAL_AUTH_PASSWORD:-}"
+      LOOPS_EMAIL_API_KEY: "${LOOPS_EMAIL_API_KEY:-}"
+      LOOPS_INVITE_TEMPLATE_ID: "${LOOPS_INVITE_TEMPLATE_ID:-}"
+      LOOPS_REVIEW_READY_TEMPLATE_ID: "${LOOPS_REVIEW_READY_TEMPLATE_ID:-}"
+      LOOPS_REVIEW_FAILED_TEMPLATE_ID: "${LOOPS_REVIEW_FAILED_TEMPLATE_ID:-}"
+      AZURE_STORAGE_ACCOUNT_NAME: "${AZURE_STORAGE_ACCOUNT_NAME:-}"
+      AZURE_STORAGE_ACCOUNT_KEY: "${AZURE_STORAGE_ACCOUNT_KEY:-}"
+      AZURE_STORAGE_CONTAINER_NAME: "${AZURE_STORAGE_CONTAINER_NAME:-}"
+      AZURE_STORAGE_ENDPOINT_URL: "${AZURE_STORAGE_ENDPOINT_URL:-}"
+      AZURE_STORAGE_PUBLIC_ENDPOINT_URL: "${AZURE_STORAGE_PUBLIC_ENDPOINT_URL:-}"
+      TZ: "${TZ:-UTC}"
+      VIRTUAL_PORT: "${VIRTUAL_PORT:-8081}"
+      VIRTUAL_HOST: "${VIRTUAL_HOST}"
+      VIRTUAL_PROTO: "${VIRTUAL_PROTO:-http}"
+      LETSENCRYPT_HOST: "${LETSENCRYPT_HOST}"
+      LETSENCRYPT_EMAIL: "${LETSENCRYPT_EMAIL}"
+      SERVER_PUBLIC_BASE_URL: "${SERVER_PUBLIC_BASE_URL:-https://${VIRTUAL_HOST}}"
+      SERVER_DATABASE_URL: "postgres://${POSTGRES_USER:-vibe-kanban}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@vibe-kanban-db:5432/${POSTGRES_DB:-vibe-kanban}"
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - "--spider"
+        - "-q"
+        - "http://127.0.0.1:8081/v1/health"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks:
+      - vibe-kanban-network
+      - letsencrypt-network
+    depends_on:
+      vibe-kanban-db:
+        condition: service_healthy
+  vibe-kanban-electric:
+    container_name: vibe-kanban-electric
+    image: "${ELECTRIC_IMAGE:-electricsql/electric:1.4.13}"
+    working_dir: /app
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "${LOG_MAX_SIZE:-10m}"
+        max-file: "${LOG_MAX_FILE:-3}"
+        compress: "${LOG_COMPRESS:-true}"
+    environment:
+      DATABASE_URL: "postgres://electric_sync:${ELECTRIC_ROLE_PASSWORD:?set ELECTRIC_ROLE_PASSWORD in .env}@vibe-kanban-db:5432/${POSTGRES_DB:-vibe-kanban}"
+      PG_PROXY_PORT: "${PG_PROXY_PORT:-65432}"
+      LOGICAL_PUBLISHER_HOST: "${LOGICAL_PUBLISHER_HOST:-vibe-kanban-electric}"
+      AUTH_MODE: "${AUTH_MODE:-insecure}"
+      ELECTRIC_INSECURE: "${ELECTRIC_INSECURE:-true}"
+      ELECTRIC_MANUAL_TABLE_PUBLISHING: "${ELECTRIC_MANUAL_TABLE_PUBLISHING:-true}"
+      ELECTRIC_USAGE_REPORTING: "${ELECTRIC_USAGE_REPORTING:-false}"
+      ELECTRIC_FEATURE_FLAGS: "${ELECTRIC_FEATURE_FLAGS:-allow_subqueries,tagged_subqueries}"
+      TZ: "${TZ:-UTC}"
+    volumes:
+      - "vibe-kanban-electric:/app/persistent"
+    depends_on:
+      vibe-kanban-app:
+        condition: service_healthy
+      vibe-kanban-db:
+        condition: service_healthy
+    networks:
+      - vibe-kanban-network
+networks:
+  vibe-kanban-network:
+    name: vibe-kanban-network
+    driver: bridge
+  letsencrypt-network:
+    name: letsencrypt-network
+    external: true
+volumes:
+  vibe-kanban-electric:
+    name: vibe-kanban-electric

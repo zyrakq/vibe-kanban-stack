@@ -1,0 +1,37 @@
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: ${LOG_MAX_SIZE:-10m}
+    max-file: ${LOG_MAX_FILE:-3}
+    compress: ${LOG_COMPRESS:-true}
+
+services:
+  vibe-kanban-db:
+    container_name: vibe-kanban-db
+    image: ${DB_IMAGE:-postgres:alpine}
+    command: ["postgres", "-c", "wal_level=logical"]
+    restart: unless-stopped
+    logging: *default-logging
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-vibe-kanban}
+      POSTGRES_USER: ${POSTGRES_USER:-vibe-kanban}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_INITDB_ARGS: --encoding=UTF8 --lc-ctype=C --lc-collate=C
+      TZ: ${TZ:-UTC}
+    volumes:
+      - vibe-kanban-db:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "/bin/sh", "-c", "exec pg_isready -h 127.0.0.1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - vibe-kanban-network
+
+volumes:
+  vibe-kanban-db:
+    name: vibe-kanban-db
+
+networks:
+  vibe-kanban-network:
+    name: vibe-kanban-network
