@@ -1,11 +1,28 @@
 [paths]
 environments_path = "./environments"
-extensions_dirs = []
+extensions_dirs = ["extensions/database"]
 
 [build]
 copy_additional_files = true
 # No system yq on this host — use stackbuilder's built-in Rust YAML merger.
 yaml_merger = "rust"
+extensions = ["postgresql", "pgrust"]
+
+[build.combos]
+postgresql = ["postgresql"]
+pgrust = ["pgrust"]
 
 [build.environments]
 available = ["forwarding", "letsencrypt", "step-ca"]
+
+[build.environments.forwarding]
+extensions = []
+combos = ["postgresql", "pgrust"]
+
+[build.environments.letsencrypt]
+extensions = []
+combos = ["postgresql", "pgrust"]
+
+[build.environments.step-ca]
+extensions = []
+combos = ["postgresql", "pgrust"]
