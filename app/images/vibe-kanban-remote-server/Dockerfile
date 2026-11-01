@@ -2,7 +2,7 @@
 #
 # Source-built image for the BloopAI/vibe-kanban remote (Cloud) variant.
 # Fully self-contained: clones the upstream repo at a pinned commit and builds
-# with an EMPTY build context (stack-conventions §15 — no vendored source).
+# with an EMPTY build context (stack-conventions §19 — no vendored source).
 #
 # Built from commit 7c3807084daad0d9d315064f60fa869de254f027 (3 commits after
 # the v0.1.45-20260919085201 tag): the tag itself does not compile — its
@@ -14,7 +14,7 @@
 # --mount=type=ssh is used.
 #
 # Build standalone:
-#   docker build -t localhost/vk-remote-server:<tag> images/vk-remote-server
+#   docker build -t localhost/vibe-kanban-remote-server:<tag> images/vibe-kanban-remote-server
 #
 # Requires BuildKit (cache mounts). Heavy: Rust nightly release build + pnpm
 # frontend build, ~10-15 min, 4+ GB RAM.
