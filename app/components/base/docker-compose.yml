@@ -17,9 +17,6 @@ services:
       ELECTRIC_URL: ${ELECTRIC_URL:-http://vibe-kanban-electric:3000}
       ELECTRIC_ROLE_PASSWORD: ${ELECTRIC_ROLE_PASSWORD:?}
       VIBEKANBAN_REMOTE_JWT_SECRET: ${VIBEKANBAN_REMOTE_JWT_SECRET:?}
-      # Local auth — the stack's default login. The server requires at least
-      # one auth provider; optional GitHub/Google OAuth is README-only
-      # (see app/README.md "Optional integrations").
       SELF_HOST_LOCAL_AUTH_EMAIL: ${SELF_HOST_LOCAL_AUTH_EMAIL:?}
       SELF_HOST_LOCAL_AUTH_PASSWORD: ${SELF_HOST_LOCAL_AUTH_PASSWORD:?}
       TZ: ${TZ:-UTC}
@@ -39,8 +36,6 @@ services:
     restart: unless-stopped
     logging: *default-logging
     environment:
-      # The vibe-kanban-db service is added by the database extension;
-      # the app creates the electric_sync role on first startup.
       DATABASE_URL: postgres://electric_sync:${ELECTRIC_ROLE_PASSWORD:?}@vibe-kanban-db:5432/${POSTGRES_DB:-vibe-kanban}
       PG_PROXY_PORT: ${PG_PROXY_PORT:-65432}
       LOGICAL_PUBLISHER_HOST: ${LOGICAL_PUBLISHER_HOST:-vibe-kanban-electric}
