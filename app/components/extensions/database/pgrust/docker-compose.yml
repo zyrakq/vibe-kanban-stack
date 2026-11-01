@@ -1,7 +1,7 @@
 services:
-  vibe-kanban-app:
+  vibe-kanban:
     environment:
-      SERVER_DATABASE_URL: postgres://${POSTGRES_USER:-vibe-kanban}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@vibe-kanban-db:5432/${POSTGRES_DB:-vibe-kanban}
+      SERVER_DATABASE_URL: postgres://${POSTGRES_USER:-vibe-kanban}:${POSTGRES_PASSWORD:?}@vibe-kanban-db:5432/${POSTGRES_DB:-vibe-kanban}
     depends_on:
       vibe-kanban-db:
         condition: service_healthy

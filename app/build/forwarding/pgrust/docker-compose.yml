@@ -6,8 +6,8 @@ x-logging:
     max-file: "${LOG_MAX_FILE:-3}"
     compress: "${LOG_COMPRESS:-true}"
 services:
-  vibe-kanban-app:
-    container_name: vibe-kanban-app
+  vibe-kanban:
+    container_name: vibe-kanban
     image: "${IMAGE:-localhost/vibe-kanban-remote-server:0.1.45}"
     restart: unless-stopped
     logging:
@@ -20,26 +20,13 @@ services:
       RUST_LOG: "${RUST_LOG:-info,remote=info}"
       SERVER_LISTEN_ADDR: "${SERVER_LISTEN_ADDR:-0.0.0.0:8081}"
       ELECTRIC_URL: "${ELECTRIC_URL:-http://vibe-kanban-electric:3000}"
-      ELECTRIC_ROLE_PASSWORD: "${ELECTRIC_ROLE_PASSWORD:?set ELECTRIC_ROLE_PASSWORD in .env}"
-      VIBEKANBAN_REMOTE_JWT_SECRET: "${VIBEKANBAN_REMOTE_JWT_SECRET:?set VIBEKANBAN_REMOTE_JWT_SECRET in .env}"
-      GITHUB_OAUTH_CLIENT_ID: "${GITHUB_OAUTH_CLIENT_ID:-}"
-      GITHUB_OAUTH_CLIENT_SECRET: "${GITHUB_OAUTH_CLIENT_SECRET:-}"
-      GOOGLE_OAUTH_CLIENT_ID: "${GOOGLE_OAUTH_CLIENT_ID:-}"
-      GOOGLE_OAUTH_CLIENT_SECRET: "${GOOGLE_OAUTH_CLIENT_SECRET:-}"
-      SELF_HOST_LOCAL_AUTH_EMAIL: "${SELF_HOST_LOCAL_AUTH_EMAIL:-}"
-      SELF_HOST_LOCAL_AUTH_PASSWORD: "${SELF_HOST_LOCAL_AUTH_PASSWORD:-}"
-      LOOPS_EMAIL_API_KEY: "${LOOPS_EMAIL_API_KEY:-}"
-      LOOPS_INVITE_TEMPLATE_ID: "${LOOPS_INVITE_TEMPLATE_ID:-}"
-      LOOPS_REVIEW_READY_TEMPLATE_ID: "${LOOPS_REVIEW_READY_TEMPLATE_ID:-}"
-      LOOPS_REVIEW_FAILED_TEMPLATE_ID: "${LOOPS_REVIEW_FAILED_TEMPLATE_ID:-}"
-      AZURE_STORAGE_ACCOUNT_NAME: "${AZURE_STORAGE_ACCOUNT_NAME:-}"
-      AZURE_STORAGE_ACCOUNT_KEY: "${AZURE_STORAGE_ACCOUNT_KEY:-}"
-      AZURE_STORAGE_CONTAINER_NAME: "${AZURE_STORAGE_CONTAINER_NAME:-}"
-      AZURE_STORAGE_ENDPOINT_URL: "${AZURE_STORAGE_ENDPOINT_URL:-}"
-      AZURE_STORAGE_PUBLIC_ENDPOINT_URL: "${AZURE_STORAGE_PUBLIC_ENDPOINT_URL:-}"
+      ELECTRIC_ROLE_PASSWORD: "${ELECTRIC_ROLE_PASSWORD:?}"
+      VIBEKANBAN_REMOTE_JWT_SECRET: "${VIBEKANBAN_REMOTE_JWT_SECRET:?}"
+      SELF_HOST_LOCAL_AUTH_EMAIL: "${SELF_HOST_LOCAL_AUTH_EMAIL:?}"
+      SELF_HOST_LOCAL_AUTH_PASSWORD: "${SELF_HOST_LOCAL_AUTH_PASSWORD:?}"
       TZ: "${TZ:-UTC}"
       SERVER_PUBLIC_BASE_URL: "${SERVER_PUBLIC_BASE_URL:-http://localhost:8081}"
-      SERVER_DATABASE_URL: "postgres://${POSTGRES_USER:-vibe-kanban}:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@vibe-kanban-db:5432/${POSTGRES_DB:-vibe-kanban}"
+      SERVER_DATABASE_URL: "postgres://${POSTGRES_USER:-vibe-kanban}:${POSTGRES_PASSWORD:?}@vibe-kanban-db:5432/${POSTGRES_DB:-vibe-kanban}"
     healthcheck:
       test:
         - CMD
@@ -70,7 +57,7 @@ services:
         max-file: "${LOG_MAX_FILE:-3}"
         compress: "${LOG_COMPRESS:-true}"
     environment:
-      DATABASE_URL: "postgres://electric_sync:${ELECTRIC_ROLE_PASSWORD:?set ELECTRIC_ROLE_PASSWORD in .env}@vibe-kanban-db:5432/${POSTGRES_DB:-vibe-kanban}"
+      DATABASE_URL: "postgres://electric_sync:${ELECTRIC_ROLE_PASSWORD:?}@vibe-kanban-db:5432/${POSTGRES_DB:-vibe-kanban}"
       PG_PROXY_PORT: "${PG_PROXY_PORT:-65432}"
       LOGICAL_PUBLISHER_HOST: "${LOGICAL_PUBLISHER_HOST:-vibe-kanban-electric}"
       AUTH_MODE: "${AUTH_MODE:-insecure}"
@@ -82,7 +69,7 @@ services:
     volumes:
       - "vibe-kanban-electric:/app/persistent"
     depends_on:
-      vibe-kanban-app:
+      vibe-kanban:
         condition: service_healthy
       vibe-kanban-db:
         condition: service_healthy

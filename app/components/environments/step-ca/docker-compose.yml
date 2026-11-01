@@ -1,5 +1,5 @@
 services:
-  vibe-kanban-app:
+  vibe-kanban:
     environment:
       VIRTUAL_PORT: ${VIRTUAL_PORT:-8081}
       VIRTUAL_HOST: ${VIRTUAL_HOST}
