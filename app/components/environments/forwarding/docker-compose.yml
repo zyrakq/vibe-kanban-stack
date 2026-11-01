@@ -1,4 +1,6 @@
 services:
-  remote-server:
+  vibe-kanban-app:
+    environment:
+      SERVER_PUBLIC_BASE_URL: ${SERVER_PUBLIC_BASE_URL:-http://localhost:8081}
     ports:
-      - "8081:8081"
+      - "${VIBEKANBAN_PORT:-8081}:8081"
