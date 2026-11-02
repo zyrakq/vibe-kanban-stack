@@ -7,7 +7,7 @@ real-time sync.
 
 ## 🧩 Components
 
-### 🖥️ [Vibe Kanban Remote Server](app/)
+### 🖥️ [Vibe Kanban Remote Server](app/remote/)
 
 The `vibe-kanban` and `vibe-kanban-electric` services plus the `vibe-kanban-db`
 database (swappable postgresql/pgrust variants), built on the source-built
@@ -28,7 +28,7 @@ certificates within isolated environments.
 ## 🚀 Quick Start
 
 ```bash
-cd app
+cd app/remote
 docker build -t localhost/vibe-kanban-remote-server:0.1.45 images/vibe-kanban-remote-server
 sb build
 cd build/forwarding/postgresql   # or letsencrypt / step-ca
@@ -36,7 +36,7 @@ cp .env.example .env             # set secrets + local-auth login
 docker compose up -d
 ```
 
-See [`app/README.md`](app/README.md) for the full runbook.
+See [`app/remote/README.md`](app/remote/README.md) for the full runbook.
 
 ## 📋 Requirements
 
