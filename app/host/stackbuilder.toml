@@ -1,0 +1,19 @@
+[paths]
+environments_path = "./environments"
+
+[build]
+skip_base_generation = true
+copy_additional_files = true
+yaml_merger = "rust"
+
+[build.environments]
+available = ["forwarding", "letsencrypt", "step-ca"]
+
+[build.environments.forwarding]
+extensions = []
+
+[build.environments.letsencrypt]
+extensions = []
+
+[build.environments.step-ca]
+extensions = []

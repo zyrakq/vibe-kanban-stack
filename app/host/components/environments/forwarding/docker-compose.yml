@@ -1,0 +1,5 @@
+services:
+  vibe-kanban-host:
+    ports:
+      - "${HOST_UI_PORT:-3000}:3000"
+      - "${PREVIEW_PUBLISH_PORT:-3001}:3001"

@@ -72,7 +72,7 @@ with `SELF_HOST_LOCAL_AUTH_EMAIL` / `SELF_HOST_LOCAL_AUTH_PASSWORD`.
 
 - **forwarding**: publishes port 8081 directly to the host
 - **letsencrypt**: joins `letsencrypt-network`; nginx-proxy terminates TLS and
-  routes to `vibe-kanban:8081`
+  routes to `vibe-kanban-remote:8081`
 - **step-ca**: joins `step-ca-network`; same wiring with the step-ca stack
 
 ### Database variants
@@ -84,7 +84,7 @@ with `SELF_HOST_LOCAL_AUTH_EMAIL` / `SELF_HOST_LOCAL_AUTH_PASSWORD`.
 
 ### Base Configuration
 
-- `COMPOSE_PROJECT_NAME`: Project name for Docker Compose (default: vibe-kanban)
+- `COMPOSE_PROJECT_NAME`: Project name for Docker Compose (default: vibe-kanban-remote)
 - `IMAGE`: Prebuilt remote-server image (default: localhost/vibe-kanban-remote-server:0.1.45)
 - `LOG_MAX_SIZE` / `LOG_MAX_FILE` / `LOG_COMPRESS`: json-file log rotation
 - `RUST_LOG` / `SERVER_LISTEN_ADDR` / `ELECTRIC_URL`: server runtime knobs
@@ -120,7 +120,7 @@ wires local auth (there is no OAuth extension; upstream has no generic OIDC):
 
 These are genuinely read by the server at runtime but are optional third-party
 integrations, so they are NOT wired into the compose files. To enable one,
-add the entries to your `.env` AND to the `vibe-kanban` service
+add the entries to your `.env` AND to the `vibe-kanban-remote` service
 `environment:` block in your generated `docker-compose.yml`, then
 `docker compose up -d`:
 
@@ -163,10 +163,10 @@ add the entries to your `.env` AND to the `vibe-kanban` service
 
 **Runtime Issues:**
 - **ElectricSQL fails to connect**: the `electric_sync` role is created by
-  `vibe-kanban` on first startup. Verify the app is healthy and
+  `vibe-kanban-remote` on first startup. Verify the app is healthy and
   `ELECTRIC_ROLE_PASSWORD` matches, then `docker compose restart vibe-kanban-electric`
 - **Database connection refused**: check `docker compose logs vibe-kanban-db`;
-  the server retries, but `docker compose restart vibe-kanban` helps after
+  the server retries, but `docker compose restart vibe-kanban-remote` helps after
   a slow first DB boot
 
 **SSL Issues:**
@@ -183,3 +183,23 @@ add the entries to your `.env` AND to the `vibe-kanban` service
   upstream source itself) — never add a `build:` section to compose
 - No generic OIDC: upstream auth is GitHub/Google OAuth or local auth only,
   so there is no kanidm `oidc` extension for this stack
+
+## Database publish (for the relay group)
+
+The database extensions publish Postgres so the relay (`app/relay`) can read
+the remote schema: `DB_PUBLISH_ADDR` (default `127.0.0.1`) and
+`DB_PUBLISH_PORT` (default `5432`). For a relay on another machine set the
+interface address and restrict it with a firewall/VPN — Postgres is not
+TLS-protected by default.
+
+## Relay build arg
+
+`VITE_RELAY_API_BASE_URL` is baked into the web bundle at image build:
+
+```bash
+docker build --build-arg VITE_RELAY_API_BASE_URL=https://relay.<domain> \
+  -t localhost/vibe-kanban-remote-server:0.1.45-relay images/vibe-kanban-remote-server
+```
+
+Then set `IMAGE=localhost/vibe-kanban-remote-server:0.1.45-relay` in `.env`.
+Secrets are generated with `openssl rand -base64 32`.

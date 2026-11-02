@@ -1,0 +1,4 @@
+services:
+  vibe-kanban-relay:
+    ports:
+      - "${RELAY_PORT:-8082}:8082"
