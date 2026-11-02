@@ -1,0 +1,60 @@
+---
+x-logging:
+  driver: json-file
+  options:
+    max-size: "${LOG_MAX_SIZE:-10m}"
+    max-file: "${LOG_MAX_FILE:-3}"
+    compress: "${LOG_COMPRESS:-true}"
+services:
+  vibe-kanban-host:
+    container_name: vibe-kanban-host
+    image: "${IMAGE:-localhost/vibe-kanban-host:0.1.45}"
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "${LOG_MAX_SIZE:-10m}"
+        max-file: "${LOG_MAX_FILE:-3}"
+        compress: "${LOG_COMPRESS:-true}"
+    environment:
+      RUST_LOG: "${RUST_LOG:-info}"
+      HOST: "${HOST:-0.0.0.0}"
+      PORT: "${PORT:-3000}"
+      PREVIEW_PROXY_PORT: "${PREVIEW_PROXY_PORT:-3001}"
+      VK_SHARED_API_BASE: "${VK_SHARED_API_BASE:?}"
+      VK_SHARED_RELAY_API_BASE: "${VK_SHARED_RELAY_API_BASE:?}"
+      TZ: "${TZ:-UTC}"
+      VIRTUAL_PORT: "${VIRTUAL_PORT:-3000}"
+      VIRTUAL_HOST: "${VIRTUAL_HOST}"
+      VIRTUAL_PROTO: "${VIRTUAL_PROTO:-http}"
+      LETSENCRYPT_HOST: "${LETSENCRYPT_HOST}"
+      LETSENCRYPT_EMAIL: "${LETSENCRYPT_EMAIL}"
+    volumes:
+      - "vibe-kanban-host-data:/data"
+      - "vibe-kanban-host-worktrees:/var/tmp/vibe-kanban"
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - "--spider"
+        - "-q"
+        - "http://127.0.0.1:${PORT:-3000}/health"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks:
+      - vibe-kanban-host-network
+      - step-ca-network
+networks:
+  vibe-kanban-host-network:
+    name: vibe-kanban-host-network
+    driver: bridge
+  step-ca-network:
+    name: step-ca-network
+    external: true
+volumes:
+  vibe-kanban-host-data:
+    name: vibe-kanban-host-data
+  vibe-kanban-host-worktrees:
+    name: vibe-kanban-host-worktrees

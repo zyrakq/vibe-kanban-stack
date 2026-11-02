@@ -138,3 +138,21 @@ Naming: services `<stack>-<role>` per group (`vibe-kanban-remote`,
 - R3: add images `vibe-kanban-relay` (crates/relay-tunnel) and
   `vibe-kanban-host` (root Dockerfile + Node/executors layer), pinned commit.
 - R4: cross-group wiring: shared JWT secret and DB URL via env.
+
+## Gate findings (Stages B/C)
+
+- Wildcard `*.relay.<domain>`: nginx-proxy routing works via the
+  `VIRTUAL_HOST` wildcard. A wildcard cert needs DNS-01; http-01 (step-ca,
+  letsencrypt overlays) cannot issue it, so `LETSENCRYPT_HOST` is the apex
+  `relay.<domain>` only. Browser sessions on `<x>.relay.<domain>` get the
+  default/untrusted cert unless a wildcard cert is supplied externally.
+- Relay reaches the remote DB through `host.docker.internal`; the remote DB
+  must publish its port on a non-loopback address (`DB_PUBLISH_ADDR=0.0.0.0`).
+- `VK_SHARED_API_BASE` runtime override CONFIRMED (Stage C): host log shows
+  `Remote client initialized with URL`, `/api/info` has `relay_enabled: true`.
+- Host trusts the remote via rustls platform verifier: with step-ca the host
+  container needs the step-ca root CA (mount it and set `SSL_CERT_FILE`),
+  else `/api/auth/local/login` returns 502 (UnknownIssuer). The host panics
+  if `SSL_CERT_FILE` is unreadable by uid 10001 (use mode 644).
+- Host local login with the remote's `SELF_HOST_LOCAL_AUTH_*` creds works
+  (proxied to remote `/v1/auth/local/login`).
