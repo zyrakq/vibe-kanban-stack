@@ -15,6 +15,8 @@ RUN apk add --no-cache git \
 
 FROM rust:1.93-slim-bookworm AS builder
 ENV CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse
+ARG CARGO_BUILD_JOBS=2
+ENV CARGO_BUILD_JOBS=${CARGO_BUILD_JOBS}
 ENV CARGO_TARGET_DIR=/app/target
 RUN apt-get update \
  && apt-get install -y --no-install-recommends pkg-config libssl-dev ca-certificates \
@@ -25,7 +27,7 @@ RUN mkdir -p /app/bin
 RUN --mount=type=cache,id=cargo-registry,target=/usr/local/cargo/registry \
     --mount=type=cache,id=cargo-git,target=/usr/local/cargo/git \
     --mount=type=cache,id=relay-target,target=/app/target \
-    cargo build --locked --release --manifest-path crates/relay-tunnel/Cargo.toml \
+    cargo build --release --manifest-path crates/relay-tunnel/Cargo.toml \
  && cp /app/target/release/relay-server /app/bin/relay-server
 
 FROM debian:bookworm-slim
