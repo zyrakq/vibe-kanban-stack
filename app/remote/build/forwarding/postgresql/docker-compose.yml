@@ -6,8 +6,8 @@ x-logging:
     max-file: "${LOG_MAX_FILE:-3}"
     compress: "${LOG_COMPRESS:-true}"
 services:
-  vibe-kanban:
-    container_name: vibe-kanban
+  vibe-kanban-remote:
+    container_name: vibe-kanban-remote
     image: "${IMAGE:-localhost/vibe-kanban-remote-server:0.1.45}"
     restart: unless-stopped
     logging:
@@ -57,7 +57,7 @@ services:
         max-file: "${LOG_MAX_FILE:-3}"
         compress: "${LOG_COMPRESS:-true}"
     environment:
-      DATABASE_URL: "postgres://electric_sync:${ELECTRIC_ROLE_PASSWORD:?}@vibe-kanban-db:5432/${POSTGRES_DB:-vibe-kanban}"
+      DATABASE_URL: "postgres://electric_sync:${ELECTRIC_ROLE_PASSWORD:?}@vibe-kanban-db:5432/${POSTGRES_DB:-remote}"
       PG_PROXY_PORT: "${PG_PROXY_PORT:-65432}"
       LOGICAL_PUBLISHER_HOST: "${LOGICAL_PUBLISHER_HOST:-vibe-kanban-electric}"
       AUTH_MODE: "${AUTH_MODE:-insecure}"
@@ -69,7 +69,7 @@ services:
     volumes:
       - "vibe-kanban-electric:/app/persistent"
     depends_on:
-      vibe-kanban:
+      vibe-kanban-remote:
         condition: service_healthy
       vibe-kanban-db:
         condition: service_healthy

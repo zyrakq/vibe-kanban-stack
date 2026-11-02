@@ -25,6 +25,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+    ports:
+      - "${DB_PUBLISH_ADDR:-127.0.0.1}:${DB_PUBLISH_PORT:-5432}:5432"
     networks:
       - vibe-kanban-network
 
