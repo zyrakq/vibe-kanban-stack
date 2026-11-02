@@ -30,6 +30,7 @@ ENV NODE_OPTIONS=--max-old-space-size=4096
 RUN corepack enable
 RUN pnpm config set store-dir /pnpm/store
 COPY --from=source /repo/pnpm-lock.yaml /repo/pnpm-workspace.yaml /repo/package.json ./
+COPY --from=source /repo/patches/ patches/
 COPY --from=source /repo/packages/local-web/package.json packages/local-web/package.json
 COPY --from=source /repo/packages/ui/package.json packages/ui/package.json
 COPY --from=source /repo/packages/web-core/package.json packages/web-core/package.json
