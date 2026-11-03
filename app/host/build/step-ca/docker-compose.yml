@@ -29,9 +29,18 @@ services:
       VIRTUAL_PROTO: "${VIRTUAL_PROTO:-http}"
       LETSENCRYPT_HOST: "${LETSENCRYPT_HOST}"
       LETSENCRYPT_EMAIL: "${LETSENCRYPT_EMAIL}"
+      STEP_CA_ROOT_CA_SRC: "${STEP_CA_ROOT_CA_SRC:-/step-ca-root/root_ca.crt}"
+      STEP_CA_ROOT_CA_FILE: "${STEP_CA_ROOT_CA_FILE:-/etc/ssl/step-ca/root_ca.crt}"
+      STEP_CA_WAIT_TIMEOUT: "${STEP_CA_WAIT_TIMEOUT:-60}"
     volumes:
       - "vibe-kanban-host-data:/data"
       - "vibe-kanban-host-worktrees:/var/tmp/vibe-kanban"
+      - type: volume
+        source: step-ca-data
+        target: /step-ca-root
+        read_only: true
+        volume:
+          subpath: certs
     healthcheck:
       test:
         - CMD
@@ -46,6 +55,9 @@ services:
     networks:
       - vibe-kanban-host-network
       - step-ca-network
+    user: root
+    entrypoint:
+      - /usr/local/bin/step-ca-trust-entrypoint.sh
 networks:
   vibe-kanban-host-network:
     name: vibe-kanban-host-network
@@ -58,3 +70,5 @@ volumes:
     name: vibe-kanban-host-data
   vibe-kanban-host-worktrees:
     name: vibe-kanban-host-worktrees
+  step-ca-data:
+    external: true

@@ -16,4 +16,4 @@ extensions = []
 extensions = []
 
 [build.environments.step-ca]
-extensions = []
+extensions = ["step-ca-trust"]

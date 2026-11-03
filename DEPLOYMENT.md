@@ -103,6 +103,7 @@ Naming: services `<stack>-<role>` per group (`vibe-kanban-remote`,
 |-----------|------|--------|--------------|
 | letsencrypt / forwarding / step-ca env (per component) | infra | implemented (group 1) / available (group 2) | environments |
 | database postgresql, pgrust | infra | implemented (group 1) | — |
+| step-ca-trust (host) | infra | implemented | step-ca env |
 | oidc | infra | refused | — |
 | s3-storage (R2_* review payloads) | infra | available (mandatory attempt, stage F) | RustFS |
 | azure-attachments (issue attachments) | product | available | Azure account |

@@ -1,0 +1,19 @@
+services:
+  vibe-kanban-host:
+    user: root
+    entrypoint: ["/usr/local/bin/step-ca-trust-entrypoint.sh"]
+    environment:
+      STEP_CA_ROOT_CA_SRC: ${STEP_CA_ROOT_CA_SRC:-/step-ca-root/root_ca.crt}
+      STEP_CA_ROOT_CA_FILE: ${STEP_CA_ROOT_CA_FILE:-/etc/ssl/step-ca/root_ca.crt}
+      STEP_CA_WAIT_TIMEOUT: ${STEP_CA_WAIT_TIMEOUT:-60}
+    volumes:
+      - type: volume
+        source: step-ca-data
+        target: /step-ca-root
+        read_only: true
+        volume:
+          subpath: certs
+
+volumes:
+  step-ca-data:
+    external: true

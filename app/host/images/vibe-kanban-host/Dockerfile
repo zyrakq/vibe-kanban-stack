@@ -83,6 +83,27 @@ WORKDIR /repos
 COPY --from=builder /usr/local/bin/server /usr/local/bin/server
 RUN mkdir -p /repos /data /var/tmp/vibe-kanban \
  && chown -R appuser:appuser /repos /data /var/tmp/vibe-kanban
+# Optional root-CA trust wrapper (used only by the step-ca-trust extension via
+# `entrypoint:` + `user: root`): copies the CA for uid 10001, then drops privileges.
+COPY --chmod=755 <<'EOF' /usr/local/bin/step-ca-trust-entrypoint.sh
+#!/bin/sh
+set -e
+SRC="${STEP_CA_ROOT_CA_SRC:-/step-ca-root/root_ca.crt}"
+DST="${STEP_CA_ROOT_CA_FILE:-/etc/ssl/step-ca/root_ca.crt}"
+WAIT="${STEP_CA_WAIT_TIMEOUT:-60}"
+i=0
+while [ ! -s "$SRC" ]; do
+  i=$((i+1))
+  [ "$i" -gt "$WAIT" ] && { echo "step-ca-trust: $SRC not found after ${WAIT}s" >&2; exit 1; }
+  sleep 1
+done
+mkdir -p "$(dirname "$DST")"
+cat /etc/ssl/certs/ca-certificates.crt "$SRC" > "$DST"
+chown 10001:10001 "$DST"
+chmod 644 "$DST"
+export SSL_CERT_FILE="$DST" HOME=/home/appuser
+exec setpriv --reuid=10001 --regid=10001 --init-groups -- /usr/bin/tini -- /usr/local/bin/server "$@"
+EOF
 USER appuser
 ENV HOST=0.0.0.0
 ENV PORT=3000
