@@ -41,6 +41,7 @@ services:
         read_only: true
         volume:
           subpath: certs
+      - "${REPOS_PATH:?}:/repos"
     healthcheck:
       test:
         - CMD

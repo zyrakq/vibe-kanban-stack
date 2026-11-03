@@ -1,0 +1,10 @@
+# repo-local (alternative to repo-sync): bind-mounts a local host path as /repos in the host container.
+# POLICY EXCEPTION (stack-conventions section 4, no bind mounts): deliberate. Reason: the user's
+# existing working copies live on the host filesystem and must be used in place (edits visible
+# both ways); a named volume would only hold a copy. Requirement: REPOS_PATH must be writable
+# by uid 10001 (chown/ACL on the host side; this stack never changes host permissions).
+# Mutually exclusive with repo-sync (both mount /repos).
+services:
+  vibe-kanban-host:
+    volumes:
+      - ${REPOS_PATH:?}:/repos
