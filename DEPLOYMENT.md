@@ -157,3 +157,17 @@ Naming: services `<stack>-<role>` per group (`vibe-kanban-remote`,
   if `SSL_CERT_FILE` is unreadable by uid 10001 (use mode 644).
 - Host local login with the remote's `SELF_HOST_LOCAL_AUTH_*` creds works
   (proxied to remote `/v1/auth/local/login`).
+
+## Gate findings (Stage D) — INCOMPLETE
+- Deployed (step-ca variant): remote (`0.1.45-relay`) + db + electric, relay, host — all 5 containers healthy.
+- `POST /api/relay-auth/client/pair` is served by the **host/local server** (`crates/server`, `relay_auth/client.rs`), not by remote
+  (live: host 422 on empty body, remote 405 SPA fallback, relay 404). The pairing client is therefore a local server, and
+  release builds reject pairing a machine to itself ("Cannot pair this machine to itself") — Stage D needs a second machine/host
+  (or a second host instance with a different `user_id`).
+- Verified: `POST /api/relay-auth/server/enrollment-code` returns a code; `GET /api/relay-auth/client/hosts` returns empty list;
+  remote DB `hosts` table has a row, status online; host reaches remote with the step-ca root.
+- NOT verified (blocked): browser E2E (Link a host, workspaces via relay wildcard, executor task) — in-app browser tool
+  disconnected; no `agent-browser` CLI; remote web login needs credentials the executor does not hold; executor (opencode)
+  provider credentials unknown.
+- Startup note: host logged ~9 `tokens/refresh` network errors in the first 10s (step-ca root not yet effective / proxy cold start), then quiet.
+- Login `/api/auth/local/login` with the `.env` password returned Unauthorized when retried via curl (not investigated).
