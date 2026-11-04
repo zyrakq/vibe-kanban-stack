@@ -1,0 +1,23 @@
+# opencode: opencode settings for the host executor (provider keys, inline config, optional opencode.json).
+# Config file is baked via dockerfile_inline (no bind mounts); keys come from env only ({env:VAR} in opencode.json).
+# Combine with exactly one repo extension (repo-sync | repo-local) and step-ca-trust.
+services:
+  vibe-kanban-host:
+    image: ${OPENCODE_IMAGE:-localhost/vibe-kanban-host-opencode:0.1.45}
+    build:
+      context: .
+      dockerfile_inline: |
+        FROM ${IMAGE:-localhost/vibe-kanban-host:0.1.45}
+        USER root
+        RUN mkdir -p /home/appuser/.config/opencode \
+            && chown -R 10001:10001 /home/appuser/.config
+        COPY --chown=10001:10001 opencode.json /home/appuser/.config/opencode/opencode.json
+        USER appuser
+    environment:
+      OPENCODE_CONFIG_CONTENT: ${OPENCODE_CONFIG_CONTENT:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      OPENCODE_MODEL: ${OPENCODE_MODEL:-}
