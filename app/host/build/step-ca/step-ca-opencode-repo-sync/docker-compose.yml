@@ -1,0 +1,113 @@
+---
+x-logging:
+  driver: json-file
+  options:
+    max-size: "${LOG_MAX_SIZE:-10m}"
+    max-file: "${LOG_MAX_FILE:-3}"
+    compress: "${LOG_COMPRESS:-true}"
+services:
+  vibe-kanban-host:
+    container_name: vibe-kanban-host
+    image: "${OPENCODE_IMAGE:-localhost/vibe-kanban-host-opencode:0.1.45}"
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "${LOG_MAX_SIZE:-10m}"
+        max-file: "${LOG_MAX_FILE:-3}"
+        compress: "${LOG_COMPRESS:-true}"
+    environment:
+      RUST_LOG: "${RUST_LOG:-info}"
+      HOST: "${HOST:-0.0.0.0}"
+      PORT: "${PORT:-3000}"
+      PREVIEW_PROXY_PORT: "${PREVIEW_PROXY_PORT:-3001}"
+      VK_SHARED_API_BASE: "${VK_SHARED_API_BASE:?}"
+      VK_SHARED_RELAY_API_BASE: "${VK_SHARED_RELAY_API_BASE:?}"
+      TZ: "${TZ:-UTC}"
+      VIRTUAL_PORT: "${VIRTUAL_PORT:-3000}"
+      VIRTUAL_HOST: "${VIRTUAL_HOST}"
+      VIRTUAL_PROTO: "${VIRTUAL_PROTO:-http}"
+      LETSENCRYPT_HOST: "${LETSENCRYPT_HOST}"
+      LETSENCRYPT_EMAIL: "${LETSENCRYPT_EMAIL}"
+      STEP_CA_ROOT_CA_SRC: "${STEP_CA_ROOT_CA_SRC:-/step-ca-root/root_ca.crt}"
+      STEP_CA_ROOT_CA_FILE: "${STEP_CA_ROOT_CA_FILE:-/etc/ssl/step-ca/root_ca.crt}"
+      STEP_CA_WAIT_TIMEOUT: "${STEP_CA_WAIT_TIMEOUT:-60}"
+      OPENCODE_CONFIG_CONTENT: "${OPENCODE_CONFIG_CONTENT:-}"
+      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
+      OPENROUTER_API_KEY: "${OPENROUTER_API_KEY:-}"
+      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
+      GROQ_API_KEY: "${GROQ_API_KEY:-}"
+      OPENCODE_MODEL: "${OPENCODE_MODEL:-}"
+    volumes:
+      - "vibe-kanban-host-data:/data"
+      - "vibe-kanban-host-worktrees:/var/tmp/vibe-kanban"
+      - type: volume
+        source: step-ca-data
+        target: /step-ca-root
+        read_only: true
+        volume:
+          subpath: certs
+      - "vibe-kanban-host-repos:/repos"
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - "--spider"
+        - "-q"
+        - "http://127.0.0.1:${PORT:-3000}/health"
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks:
+      - vibe-kanban-host-network
+      - step-ca-network
+    user: root
+    entrypoint:
+      - /usr/local/bin/step-ca-trust-entrypoint.sh
+    build:
+      context: "."
+      dockerfile_inline: "FROM ${IMAGE:-localhost/vibe-kanban-host:0.1.45}\nUSER root\nRUN mkdir -p /home/appuser/.config/opencode \\\n    && chown -R 10001:10001 /home/appuser/.config\nCOPY --chown=10001:10001 opencode.json /home/appuser/.config/opencode/opencode.json\nUSER appuser\n"
+    depends_on:
+      vibe-kanban-repo-sync:
+        condition: service_started
+  vibe-kanban-repo-sync:
+    image: "${REPO_SYNC_IMAGE:-alpine/git:latest}"
+    container_name: vibe-kanban-repo-sync
+    restart: unless-stopped
+    user: root
+    entrypoint:
+      - /bin/sh
+      - "-c"
+    command:
+      - "set -eu\nURL=\"$${REPO_SYNC_URL}\"\nBRANCH=\"$${REPO_SYNC_BRANCH:-main}\"\nNAME=\"$${REPO_SYNC_DIR_NAME:-}\"\n[ -n \"$$NAME\" ] || NAME=\"$$(basename \"$${URL%.git}\")\"\nDEST=\"/repos/$$NAME\"\nif [ -n \"$${REPO_SYNC_TOKEN:-}\" ]; then\n  # token via https credential helper (not stored in the URL / .git/config)\n  export GIT_ASKPASS=/tmp/askpass.sh\n  printf '#!/bin/sh\\necho \"$$REPO_SYNC_TOKEN\"\\n' > /tmp/askpass.sh\n  chmod 700 /tmp/askpass.sh\n  export GIT_USERNAME=\"$${REPO_SYNC_USER:-x-access-token}\"\n  git config --global credential.username \"$$GIT_USERNAME\"\nfi\nif [ -n \"$${REPO_SYNC_SSH_KEY:-}\" ]; then\n  printf '%s\\n' \"$$REPO_SYNC_SSH_KEY\" > /tmp/id_sync\n  chmod 600 /tmp/id_sync\n  export GIT_SSH_COMMAND=\"ssh -i /tmp/id_sync -o StrictHostKeyChecking=accept-new -o UserKnownHostsFile=/tmp/known_hosts\"\nfi\ngit config --global --add safe.directory '*'\nwhile true; do\n  if [ -d \"$$DEST/.git\" ]; then\n    git -C \"$$DEST\" fetch --prune origin \"$$BRANCH\" && git -C \"$$DEST\" merge --ff-only \"origin/$$BRANCH\" \\\n      || echo \"repo-sync: pull failed (local changes?), will retry\"\n  else\n    git clone --branch \"$$BRANCH\" \"$$URL\" \"$$DEST\" || echo \"repo-sync: clone failed, will retry\"\n  fi\n  chown -R 10001:10001 \"$$DEST\" 2>/dev/null || true\n  sleep \"$${REPO_SYNC_INTERVAL:-300}\"\ndone\n"
+    environment:
+      - "REPO_SYNC_URL=${REPO_SYNC_URL:?}"
+      - "REPO_SYNC_BRANCH=${REPO_SYNC_BRANCH:-main}"
+      - "REPO_SYNC_DIR_NAME=${REPO_SYNC_DIR_NAME:-}"
+      - "REPO_SYNC_TOKEN=${REPO_SYNC_TOKEN:-}"
+      - "REPO_SYNC_USER=${REPO_SYNC_USER:-x-access-token}"
+      - "REPO_SYNC_SSH_KEY=${REPO_SYNC_SSH_KEY:-}"
+      - "REPO_SYNC_INTERVAL=${REPO_SYNC_INTERVAL:-300}"
+      - "TZ=${TZ:-UTC}"
+    volumes:
+      - "vibe-kanban-host-repos:/repos"
+    networks:
+      - vibe-kanban-host-network
+networks:
+  vibe-kanban-host-network:
+    name: vibe-kanban-host-network
+    driver: bridge
+  step-ca-network:
+    name: step-ca-network
+    external: true
+volumes:
+  vibe-kanban-host-data:
+    name: vibe-kanban-host-data
+  vibe-kanban-host-worktrees:
+    name: vibe-kanban-host-worktrees
+  step-ca-data:
+    external: true
+  vibe-kanban-host-repos:
+    name: vibe-kanban-host-repos

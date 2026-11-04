@@ -13,3 +13,4 @@
 | date | upstream commit | image tag / digest | note |
 |------|-----------------|--------------------|------|
 | 2026-11-03 | 7c3807084daad0d9d315064f60fa869de254f027 | localhost/vibe-kanban-host:0.1.45 | no repos-dir env; cwd /repos autodiscovered; /api/filesystem/git-repos, POST /api/repos |
+| 2026-11-04 | 7c3807084daad0d9d315064f60fa869de254f027 | localhost/vibe-kanban-host-opencode:0.1.45 (FROM base) | opencode executor: npx opencode-ai@1.4.7, inherits env, merges OPENCODE_CONFIG_CONTENT; opencode data in /data/opencode |

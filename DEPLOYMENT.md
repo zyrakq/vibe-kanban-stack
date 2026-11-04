@@ -115,6 +115,7 @@ Naming: services `<stack>-<role>` per group (`vibe-kanban-remote`,
 | github-app (PR review, webhooks) | product | available | GitHub App, review worker |
 | loops-email (invites) | product | available | Loops API key |
 | extra executor CLIs in host image | product | available | node, agent API keys |
+| opencode (host settings: provider keys, config) | product | implemented | host; combines with one repo extension + step-ca-trust |
 | analytics (PostHog/Sentry build args) | product | available | keys |
 | multiple hosts / host scaling | product | available | host group |
 

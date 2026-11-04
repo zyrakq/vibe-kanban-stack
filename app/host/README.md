@@ -144,6 +144,23 @@ Combos for the `step-ca` environment: `step-ca-repo-sync` = `step-ca-trust` + `r
 
 - `REPOS_PATH`: Absolute host path mounted at `/repos` (required)
 
+## 🧠 opencode extension
+
+Adds the OpenCode executor settings to the host (image `localhost/vibe-kanban-host-opencode:0.1.45`, FROM base).
+
+| Var | Purpose |
+|-----|---------|
+| `ANTHROPIC_API_KEY`, `OPENROUTER_API_KEY` | provider keys (inherited by `npx opencode-ai@1.4.7 serve`) |
+| `OPENCODE_MODEL` | default model (empty is tolerated) |
+| `OPENCODE_CONFIG_CONTENT` | JSON merged over the config (empty is tolerated) |
+| `OPENCODE_IMAGE` | image override |
+
+- Config: `cp opencode.json.example opencode.json` in the build dir (`sb` does not generate it); mounted to `/home/appuser/.config/opencode/opencode.json`.
+- No volumes; opencode data lives in `/data/opencode` (inside the existing data volume).
+- Mutually exclusive with nothing but combines with exactly one repo extension (`repo-sync` or `repo-local`) + `step-ca-trust`.
+- Combos: `step-ca-opencode-repo-sync`, `step-ca-opencode-repo-local`.
+- Gate: `step-ca-opencode-repo-sync` — config/env/HTTPS verified (opencode `debug config` as uid 10001 merges keys); browser executor E2E and `repo-local` NOT yet run.
+
 ## 🌐 Networks
 
 - **forwarding**: `vibe-kanban-host-network` (internal bridge)
