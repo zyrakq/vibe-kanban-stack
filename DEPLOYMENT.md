@@ -95,7 +95,7 @@ Naming: services `<stack>-<role>` per group (`vibe-kanban-remote`,
   the relay. Also verifies `VITE_RELAY_API_BASE_URL` build arg.
 - Stage E — pgrust swap for remote-db (default if clean), re-run A+D.
 - Stage F — S3 (RustFS `R2_*` fragment), re-run A.
-- Stage G — repo-sync (DEFAULT host repo extension): clone/pull a git repo into the `vibe-kanban-host-repos` volume at `/repos`; verify host sees the repo.
+- Stage G — repo-sync (DEFAULT host repo extension): clone/pull a git repo into the `vibe-kanban-host-repos` volume at `/repos`; verify host sees the repo. **PASSED** (step-ca variant, 2026-11-04): git-repos lists Hello-World, POST /api/repos ok, uid 10001 writable, sync fast-forward verified.
 - Stage H — repo-local (alternative, mutually exclusive with repo-sync): bind-mount `REPOS_PATH` at `/repos`; uid 10001 must be able to write.
 - OIDC: no stage (refused).
 
