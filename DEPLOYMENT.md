@@ -96,7 +96,7 @@ Naming: services `<stack>-<role>` per group (`vibe-kanban-remote`,
 - Stage E — pgrust swap for remote-db (default if clean), re-run A+D.
 - Stage F — S3 (RustFS `R2_*` fragment), re-run A.
 - Stage G — repo-sync (DEFAULT host repo extension): clone/pull a git repo into the `vibe-kanban-host-repos` volume at `/repos`; verify host sees the repo. **PASSED** (step-ca variant, 2026-11-04): git-repos lists Hello-World, POST /api/repos ok, uid 10001 writable, sync fast-forward verified.
-- Stage H — repo-local (alternative, mutually exclusive with repo-sync): bind-mount `REPOS_PATH` at `/repos`; uid 10001 must be able to write.
+- Stage H — repo-local (alternative, mutually exclusive with repo-sync): bind-mount `REPOS_PATH` at `/repos`; uid 10001 must be able to write. **PASSED** (step-ca variant, 2026-11-04): git-repos lists Hello-World, POST /api/repos ok, uid 10001 writable.
 - OIDC: no stage (refused).
 
 ## Extension catalog
@@ -106,8 +106,8 @@ Naming: services `<stack>-<role>` per group (`vibe-kanban-remote`,
 | letsencrypt / forwarding / step-ca env (per component) | infra | implemented (group 1) / available (group 2) | environments |
 | database postgresql, pgrust | infra | implemented (group 1) | — |
 | step-ca-trust (host) | infra | implemented | step-ca env |
-| repo-sync (host /repos from git) — DEFAULT | product | proposed | host; mutually exclusive with repo-local |
-| repo-local (host /repos bind mount) | product | proposed | host; policy exception to §4 no-bind-mount; uid 10001 must write; mutually exclusive with repo-sync |
+| repo-sync (host /repos from git) — DEFAULT | product | implemented | host; mutually exclusive with repo-local |
+| repo-local (host /repos bind mount) | product | implemented | host; policy exception to §4 no-bind-mount; uid 10001 must write; mutually exclusive with repo-sync |
 | oidc | infra | refused | — |
 | s3-storage (R2_* review payloads) | infra | available (mandatory attempt, stage F) | RustFS |
 | azure-attachments (issue attachments) | product | available | Azure account |
