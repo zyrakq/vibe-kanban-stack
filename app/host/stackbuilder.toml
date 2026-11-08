@@ -5,7 +5,6 @@ environments_path = "./environments"
 skip_base_generation = true
 copy_additional_files = true
 env_file_patterns = [".env", "opencode.json"]
-yaml_merger = "rust"
 extensions = ["step-ca-trust", "repo-sync", "repo-local", "opencode"]
 
 [build.combos]
@@ -19,14 +18,13 @@ available = ["forwarding", "letsencrypt", "step-ca"]
 
 [build.environments.forwarding]
 extensions = []
+skip_base_generation = false
 
 [build.environments.letsencrypt]
 extensions = []
+skip_base_generation = false
 
 [build.environments.step-ca]
 extensions = []
 combos = ["step-ca-opencode-repo-sync", "step-ca-opencode-repo-local", "step-ca-repo-sync", "step-ca-repo-local"]
 
-# Repo extensions (host /repos): repo-sync is the DEFAULT; repo-local is the alternative.
-# Mutually exclusive (both mount /repos) - never list both. To switch, replace "repo-sync" with "repo-local".
-# forwarding/letsencrypt get one of them only after the step-ca gates pass.

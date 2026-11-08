@@ -1,6 +1,3 @@
-# opencode: opencode settings for the host executor (provider keys, inline config, optional opencode.json).
-# Config file is baked via dockerfile_inline (no bind mounts); keys come from env only ({env:VAR} in opencode.json).
-# Combine with exactly one repo extension (repo-sync | repo-local) and step-ca-trust.
 services:
   vibe-kanban-host:
     image: ${OPENCODE_IMAGE:-localhost/vibe-kanban-host-opencode:0.1.45}

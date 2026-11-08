@@ -1,41 +1,30 @@
----
-x-logging:
+x-logging: &default-logging
   driver: json-file
   options:
-    max-size: "${LOG_MAX_SIZE:-10m}"
-    max-file: "${LOG_MAX_FILE:-3}"
-    compress: "${LOG_COMPRESS:-true}"
+    max-size: ${LOG_MAX_SIZE:-10m}
+    max-file: ${LOG_MAX_FILE:-3}
+    compress: ${LOG_COMPRESS:-true}
 services:
   vibe-kanban-relay:
     container_name: vibe-kanban-relay
-    image: "${IMAGE:-localhost/vibe-kanban-relay:0.1.45}"
+    image: ${IMAGE:-localhost/vibe-kanban-relay:0.1.45}
     restart: unless-stopped
-    logging:
-      driver: json-file
-      options:
-        max-size: "${LOG_MAX_SIZE:-10m}"
-        max-file: "${LOG_MAX_FILE:-3}"
-        compress: "${LOG_COMPRESS:-true}"
+    logging: *default-logging
     environment:
-      RUST_LOG: "${RUST_LOG:-info}"
-      RELAY_LISTEN_ADDR: "${RELAY_LISTEN_ADDR:-0.0.0.0:8082}"
-      VIBEKANBAN_REMOTE_JWT_SECRET: "${VIBEKANBAN_REMOTE_JWT_SECRET:?}"
-      SERVER_DATABASE_URL: "postgres://${REMOTE_DB_USER:-vibe-kanban}:${REMOTE_DB_PASSWORD:?}@${REMOTE_DB_HOST:-host.docker.internal}:${REMOTE_DB_PORT:-5432}/${REMOTE_DB_NAME:-remote}?sslmode=${REMOTE_DB_SSLMODE:-prefer}"
-      TZ: "${TZ:-UTC}"
-      VIRTUAL_PORT: "${VIRTUAL_PORT:-8082}"
-      VIRTUAL_HOST: "${VIRTUAL_HOST}"
-      VIRTUAL_PROTO: "${VIRTUAL_PROTO:-http}"
-      LETSENCRYPT_HOST: "${LETSENCRYPT_HOST}"
-      LETSENCRYPT_EMAIL: "${LETSENCRYPT_EMAIL}"
+      RUST_LOG: ${RUST_LOG:-info}
+      RELAY_LISTEN_ADDR: ${RELAY_LISTEN_ADDR:-0.0.0.0:8082}
+      VIBEKANBAN_REMOTE_JWT_SECRET: ${VIBEKANBAN_REMOTE_JWT_SECRET:?}
+      SERVER_DATABASE_URL: postgres://${REMOTE_DB_USER:-vibe-kanban}:${REMOTE_DB_PASSWORD:?}@${REMOTE_DB_HOST:-host.docker.internal}:${REMOTE_DB_PORT:-5432}/${REMOTE_DB_NAME:-remote}?sslmode=${REMOTE_DB_SSLMODE:-prefer}
+      TZ: ${TZ:-UTC}
+      VIRTUAL_PORT: ${VIRTUAL_PORT:-8082}
+      VIRTUAL_HOST: ${VIRTUAL_HOST}
+      VIRTUAL_PROTO: ${VIRTUAL_PROTO:-http}
+      LETSENCRYPT_HOST: ${LETSENCRYPT_HOST}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
-      test:
-        - CMD
-        - wget
-        - "--spider"
-        - "-q"
-        - "http://127.0.0.1:8082/health"
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:8082/health"]
       interval: 5s
       timeout: 5s
       retries: 10

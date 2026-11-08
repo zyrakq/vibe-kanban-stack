@@ -1,5 +1,3 @@
-# repo-sync (DEFAULT repo extension): sidecar clones/pulls a git repo into a named volume shared with the host (/repos).
-# Mutually exclusive with repo-local (both mount /repos).
 services:
   vibe-kanban-host:
     volumes:
@@ -23,7 +21,6 @@ services:
         [ -n "$$NAME" ] || NAME="$$(basename "$${URL%.git}")"
         DEST="/repos/$$NAME"
         if [ -n "$${REPO_SYNC_TOKEN:-}" ]; then
-          # token via https credential helper (not stored in the URL / .git/config)
           export GIT_ASKPASS=/tmp/askpass.sh
           printf '#!/bin/sh\necho "$$REPO_SYNC_TOKEN"\n' > /tmp/askpass.sh
           chmod 700 /tmp/askpass.sh

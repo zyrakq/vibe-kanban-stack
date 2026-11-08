@@ -1,61 +1,50 @@
----
-x-logging:
+x-logging: &default-logging
   driver: json-file
   options:
-    max-size: "${LOG_MAX_SIZE:-10m}"
-    max-file: "${LOG_MAX_FILE:-3}"
-    compress: "${LOG_COMPRESS:-true}"
+    max-size: ${LOG_MAX_SIZE:-10m}
+    max-file: ${LOG_MAX_FILE:-3}
+    compress: ${LOG_COMPRESS:-true}
 services:
   vibe-kanban-host:
     container_name: vibe-kanban-host
-    image: "${OPENCODE_IMAGE:-localhost/vibe-kanban-host-opencode:0.1.45}"
+    image: ${OPENCODE_IMAGE:-localhost/vibe-kanban-host-opencode:0.1.45}
     restart: unless-stopped
-    logging:
-      driver: json-file
-      options:
-        max-size: "${LOG_MAX_SIZE:-10m}"
-        max-file: "${LOG_MAX_FILE:-3}"
-        compress: "${LOG_COMPRESS:-true}"
+    logging: *default-logging
     environment:
-      RUST_LOG: "${RUST_LOG:-info}"
-      HOST: "${HOST:-0.0.0.0}"
-      PORT: "${PORT:-3000}"
-      PREVIEW_PROXY_PORT: "${PREVIEW_PROXY_PORT:-3001}"
-      VK_SHARED_API_BASE: "${VK_SHARED_API_BASE:?}"
-      VK_SHARED_RELAY_API_BASE: "${VK_SHARED_RELAY_API_BASE:?}"
-      TZ: "${TZ:-UTC}"
-      VIRTUAL_PORT: "${VIRTUAL_PORT:-3000}"
-      VIRTUAL_HOST: "${VIRTUAL_HOST}"
-      VIRTUAL_PROTO: "${VIRTUAL_PROTO:-http}"
-      LETSENCRYPT_HOST: "${LETSENCRYPT_HOST}"
-      LETSENCRYPT_EMAIL: "${LETSENCRYPT_EMAIL}"
-      STEP_CA_ROOT_CA_SRC: "${STEP_CA_ROOT_CA_SRC:-/step-ca-root/root_ca.crt}"
-      STEP_CA_ROOT_CA_FILE: "${STEP_CA_ROOT_CA_FILE:-/etc/ssl/step-ca/root_ca.crt}"
-      STEP_CA_WAIT_TIMEOUT: "${STEP_CA_WAIT_TIMEOUT:-60}"
-      OPENCODE_CONFIG_CONTENT: "${OPENCODE_CONFIG_CONTENT:-}"
-      ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
-      OPENAI_API_KEY: "${OPENAI_API_KEY:-}"
-      OPENROUTER_API_KEY: "${OPENROUTER_API_KEY:-}"
-      GEMINI_API_KEY: "${GEMINI_API_KEY:-}"
-      GROQ_API_KEY: "${GROQ_API_KEY:-}"
-      OPENCODE_MODEL: "${OPENCODE_MODEL:-}"
+      RUST_LOG: ${RUST_LOG:-info}
+      HOST: ${HOST:-0.0.0.0}
+      PORT: ${PORT:-3000}
+      PREVIEW_PROXY_PORT: ${PREVIEW_PROXY_PORT:-3001}
+      VK_SHARED_API_BASE: ${VK_SHARED_API_BASE:?}
+      VK_SHARED_RELAY_API_BASE: ${VK_SHARED_RELAY_API_BASE:?}
+      TZ: ${TZ:-UTC}
+      VIRTUAL_PORT: ${VIRTUAL_PORT:-3000}
+      VIRTUAL_HOST: ${VIRTUAL_HOST}
+      VIRTUAL_PROTO: ${VIRTUAL_PROTO:-http}
+      LETSENCRYPT_HOST: ${LETSENCRYPT_HOST}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
+      STEP_CA_ROOT_CA_SRC: ${STEP_CA_ROOT_CA_SRC:-/step-ca-root/root_ca.crt}
+      STEP_CA_ROOT_CA_FILE: ${STEP_CA_ROOT_CA_FILE:-/etc/ssl/step-ca/root_ca.crt}
+      STEP_CA_WAIT_TIMEOUT: ${STEP_CA_WAIT_TIMEOUT:-60}
+      OPENCODE_CONFIG_CONTENT: ${OPENCODE_CONFIG_CONTENT:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      OPENCODE_MODEL: ${OPENCODE_MODEL:-}
     volumes:
-      - "vibe-kanban-host-data:/data"
-      - "vibe-kanban-host-worktrees:/var/tmp/vibe-kanban"
+      - vibe-kanban-host-data:/data
+      - vibe-kanban-host-worktrees:/var/tmp/vibe-kanban
       - type: volume
         source: step-ca-data
         target: /step-ca-root
         read_only: true
         volume:
           subpath: certs
-      - "${REPOS_PATH:?}:/repos"
+      - ${REPOS_PATH:?}:/repos
     healthcheck:
-      test:
-        - CMD
-        - wget
-        - "--spider"
-        - "-q"
-        - "http://127.0.0.1:${PORT:-3000}/health"
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:${PORT:-3000}/health"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -64,11 +53,16 @@ services:
       - vibe-kanban-host-network
       - step-ca-network
     user: root
-    entrypoint:
-      - /usr/local/bin/step-ca-trust-entrypoint.sh
+    entrypoint: ["/usr/local/bin/step-ca-trust-entrypoint.sh"]
     build:
-      context: "."
-      dockerfile_inline: "FROM ${IMAGE:-localhost/vibe-kanban-host:0.1.45}\nUSER root\nRUN mkdir -p /home/appuser/.config/opencode \\\n    && chown -R 10001:10001 /home/appuser/.config\nCOPY --chown=10001:10001 opencode.json /home/appuser/.config/opencode/opencode.json\nUSER appuser\n"
+      context: .
+      dockerfile_inline: |
+        FROM ${IMAGE:-localhost/vibe-kanban-host:0.1.45}
+        USER root
+        RUN mkdir -p /home/appuser/.config/opencode \
+            && chown -R 10001:10001 /home/appuser/.config
+        COPY --chown=10001:10001 opencode.json /home/appuser/.config/opencode/opencode.json
+        USER appuser
 networks:
   vibe-kanban-host-network:
     name: vibe-kanban-host-network

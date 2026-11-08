@@ -4,7 +4,6 @@ environments_path = "./environments"
 [build]
 skip_base_generation = true
 copy_additional_files = true
-yaml_merger = "rust"
 
 [build.environments]
 available = ["forwarding", "letsencrypt", "step-ca"]
